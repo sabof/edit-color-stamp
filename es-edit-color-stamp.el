@@ -10,7 +10,7 @@
 ;; The latest version, and all the relevant information can be found there.
 ;;
 ;; You should find a qt_color_picker folder in the same directory as this file.
-;; If you want to use the QT color picker, goto that foloder and run:
+;; If you want to use the QT color picker, go to that folder and run:
 
 ;; $ qmake qt_color_picker.pro; make
 
