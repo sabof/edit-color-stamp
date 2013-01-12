@@ -8,6 +8,14 @@
 
 ;; The project is hosted at https://github.com/sabof/es-edit-color-stamp
 ;; The latest version, and all the relevant information can be found there.
+;;
+;; You should find a qt_color_picker folder in the same directory as this file.
+;; If you want to use the QT color picker, goto that foloder and run:
+
+;; $ qmake qt_color_picker.pro; make
+
+;; then move the qt_color_picker executable somewhere in your path, or point the
+;; es-color-qt-picker-exec variable to it's location.
 
 ;;; License:
 
@@ -97,7 +105,8 @@
         (es-color-emacs-color-to-hex
          color))))))
 
-(defun* es-color-edit-stamp ()
+;;;###autoload
+(defun* es-edit-color-stamp ()
   (interactive)
   (save-excursion
     (when (and (or (eq (char-after) ?\# )
@@ -115,7 +124,5 @@
                   'es--color-change-stamp
                   initial-buffer
                   overlay))))))
-
-(defalias 'es-edit-color-stamp 'es-color-edit-stamp)
 
 (provide 'es-edit-color-stamp)
