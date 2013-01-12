@@ -1,5 +1,9 @@
+;;;  -*- lexical-binding: t -*-
+(require 'es-lib)
+
 (defvar es-color-picker-exec "color_picker")
-(defvar es-get-color-function 'es-get-color-qt)
+(defvar es-get-color-function 'es-color-launch-qt-picker)
+(defvar es-get-color-function 'es-color-launch-internal-picker)
 ;; Relevant: widget-color--choose-action
 
 (defun es-color-list-to-hex (color-list)
@@ -26,22 +30,58 @@
           (string-to-int (substring hex-color 3 5) 16)
           (string-to-int (substring hex-color 5 7) 16))))
 
-(defun* es-get-color-qt (&optional (color-list (list 0 0 0)) (callback 'ignore))
-  (let* (( result-string
-           (shell-command-to-string
-            (apply 'format "%s %s %s %s"
-                   es-color-picker-exec
-                   color-list))))
-    (save-match-data
-      (if (string-match
-           "NEW_COLOR \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\)"
-           result-string)
-          (mapcar (lambda (num)
-                    (string-to-int
-                     (match-string-no-properties
-                      num result-string)))
-                  (list 1 2 3))
-          (return-from es-color-edit-stamp)))))
+(defun es-color-emacs-color-to-hex (color)
+  (let ((color-values (color-values color)))
+    (apply 'format "#%02x%02x%02x"
+           (mapcar (lambda (c) (lsh c -8))
+                   color-values))))
+
+(defun es-color--change-stamp (buffer overlay color)
+  (when (buffer-live-p buffer)
+    (save-excursion
+      (with-current-buffer buffer
+        (save-excursion
+          (goto-char (overlay-start overlay))
+          (delete-region (overlay-start overlay) (overlay-end overlay))
+          (insert (es-color-list-to-hex color))
+          (delete-overlay overlay))))))
+
+(defun* es-color-launch-qt-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+  (let* (( process
+           (apply
+            'start-process
+            es-color-picker-exec
+            "*Messages*"
+            es-color-picker-exec
+            (mapcar 'int-to-string color-list)))
+         ( process-output ""))
+    (set-process-filter
+     process (lambda (process output)
+               (setq process-output
+                     (concat process-output output))))
+    (set-process-sentinel
+     process (lambda (process change)
+               (when (string-match
+                      "NEW_COLOR \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\)"
+                      process-output)
+                 (funcall
+                  callback
+                  (mapcar (lambda (num)
+                            (string-to-int
+                             (match-string-no-properties
+                              num process-output)))
+                          (list 1 2 3))))))))
+
+(defun es-color-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+  (list-colors-display
+   nil nil
+   `(lambda (color)
+      (quit-window t)
+      (funcall
+       (function ,callback)
+       (es-color-hex-to-list
+        (es-color-emacs-color-to-hex
+         color))))))
 
 (defun* es-color-edit-stamp ()
   (interactive)
@@ -49,12 +89,18 @@
     (when (and (or (eq (char-after) ?\# )
                    (search-backward "#" (- (point) 6) t))
                (looking-at
-                "#\\(?1:\\(?:[A-Fa-f[:digit:]]\\)\\{3,6\\}\\)[^A-Fa-f[:digit:]]"))
+                "\\(?1:#\\(?:\\(?:[A-Fa-f[:digit:]]\\)\\{3\\}\\)\\{1,2\\}\\)[^A-Fa-f[:digit:]]"))
       (let* (( color-list (es-color-hex-to-list (match-string 1)))
-             ( new-color-list
-               (or (funcall es-get-color-function color-list)
-                   (return-from es-color-edit-stamp)))
-             ( new-stamp (es-color-list-to-hex new-color-list)))
-        (replace-match new-stamp t t nil 1)))))
+             ( overlay (make-overlay (match-beginning 1) (match-end 1)))
+             ( initial-buffer (current-buffer)))
+        (overlay-put overlay 'face '(:background "#888888" :foreground "#dddddd"
+                                     :box (:line-width 1 :color "#dddddd")))
+        (overlay-put overlay 'priority 100)
+        (funcall es-get-color-function
+                 color-list
+                 (apply-partially
+                  'es-color--change-stamp
+                  initial-buffer
+                  overlay))))))
 
 (provide 'es-color)
