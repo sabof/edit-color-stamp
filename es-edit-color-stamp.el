@@ -125,4 +125,6 @@
                   initial-buffer
                   overlay))))))
 
+(defalias 'es-edit-color-stamp 'es-color-edit-stamp)
+
 (provide 'es-edit-color-stamp)
