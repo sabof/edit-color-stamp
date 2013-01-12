@@ -51,7 +51,15 @@
     (if (executable-find es-color-qt-picker-exec)
         (apply 'es-color-launch-qt-picker args)
         (apply 'es-color-launch-internal-picker args))))
+(defvar es-color-at-point-function
+  #'(lambda (&rest args)
+      (or (es-color-color-at-point-hex)
+          (and (bound-and-true-p rainbow-mode)
+               (es-color-color-at-point-rainbow))))
+  "The function must returns a list like this ((R G B) beginning end). The RGB
+values should be from the 0-255 range.")
 
+;; Should be moved to es-lib
 (defun es-color-emacs-color-to-hex (color)
   (let ((color-values (color-values color)))
     (apply 'format "#%02x%02x%02x"
@@ -105,25 +113,54 @@
         (es-color-emacs-color-to-hex
          color))))))
 
+(defun es-color-color-at-point-hex ()
+  (save-excursion
+    (and (or (eq (char-after) ?\# )
+             (search-backward "#" (- (point) 6) t))
+         (looking-at
+          "\\(?1:#\\(?:\\(?:[A-Fa-f[:digit:]]\\)\\{3\\}\\)\\{1,2\\}\\)\\(?:[^A-Fa-f[:digit:]]\\|\\'\\)")
+         (list (es-color-hex-to-list (match-string 1))
+               (match-beginning 1) (match-end 1)))))
+
+(defun* es-color-color-at-point-rainbow ()
+  "Will pick up any face that has set it's background explicitly.
+Will replace it with a color stamp, disregarding any possible alpha value."
+  (save-excursion
+    (let* ((face (or (getf (text-properties-at (point)) 'face)
+                     (return-from es-color-color-at-point-rainbow)))
+           (bg (or (and (consp face)
+                        (second (assoc :background face)))
+                   (return-from es-color-color-at-point-rainbow)))
+           beginning end)
+      (while (eq (getf (text-properties-at (point)) 'face)
+                 face)
+        (forward-char -1))
+      (forward-char 1)
+      (setq beginning (point))
+      (while (eq (getf (text-properties-at (point)) 'face)
+                 face)
+        (forward-char 1))
+      ;; (forward-char -1)
+      (setq end (point))
+      (list (es-color-hex-to-list (es-color-emacs-color-to-hex bg))
+            beginning end))))
+
 ;;;###autoload
 (defun* es-edit-color-stamp ()
   (interactive)
-  (save-excursion
-    (when (and (or (eq (char-after) ?\# )
-                   (search-backward "#" (- (point) 6) t))
-               (looking-at
-                "\\(?1:#\\(?:\\(?:[A-Fa-f[:digit:]]\\)\\{3\\}\\)\\{1,2\\}\\)\\(?:[^A-Fa-f[:digit:]]\\|\\'\\)"))
-      (let* (( color-list (es-color-hex-to-list (match-string 1)))
-             ( overlay (make-overlay (match-beginning 1) (match-end 1)))
-             ( initial-buffer (current-buffer)))
-        (overlay-put overlay 'face 'es-color-stamp-highlight)
-        (overlay-put overlay 'priority 100)
-        (funcall es-color-picker-function
-                 color-list
-                 (apply-partially
-                  'es--color-change-stamp
-                  initial-buffer
-                  overlay))))))
+  (multiple-value-bind (color-list beginning end) (funcall es-color-at-point-function)
+    (unless color-list
+      (return-from es-edit-color-stamp))
+    (let* (( overlay (make-overlay beginning end))
+           ( initial-buffer (current-buffer)))
+      (overlay-put overlay 'face 'es-color-stamp-highlight)
+      (overlay-put overlay 'priority 100)
+      (funcall es-color-picker-function
+               color-list
+               (apply-partially
+                'es--color-change-stamp
+                initial-buffer
+                overlay)))))
 
 (defalias 'es-color-edit-stamp 'es-edit-color-stamp)
 
