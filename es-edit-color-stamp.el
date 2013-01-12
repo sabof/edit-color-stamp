@@ -2,7 +2,7 @@
 ;;; Version: 0.1
 ;;; Author: sabof
 ;;; URL: https://github.com/sabof/es-edit-color-stamp
-;;; Package-Requires: ((es-lib "0.1"))
+;;; Package-Requires: ((es-lib "0.2"))
 
 ;;; Commentary:
 
@@ -39,7 +39,7 @@
 
 (defvar es-color-qt-picker-exec "qt_color_picker")
 (defvar es-color-picker-function
-  (lambda (&rest args)
+  #'(lambda (&rest args)
     (if (executable-find es-color-qt-picker-exec)
         (apply 'es-color-launch-qt-picker args)
         (apply 'es-color-launch-internal-picker args))))
@@ -86,7 +86,7 @@
                               num process-output)))
                           (list 1 2 3))))))))
 
-(defun es-color-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+(defun* es-color-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
   (list-colors-display
    nil nil
    `(lambda (color)
@@ -103,7 +103,7 @@
     (when (and (or (eq (char-after) ?\# )
                    (search-backward "#" (- (point) 6) t))
                (looking-at
-                "\\(?1:#\\(?:\\(?:[A-Fa-f[:digit:]]\\)\\{3\\}\\)\\{1,2\\}\\)[^A-Fa-f[:digit:]]"))
+                "\\(?1:#\\(?:\\(?:[A-Fa-f[:digit:]]\\)\\{3\\}\\)\\{1,2\\}\\)\\(?:[^A-Fa-f[:digit:]]\\|\\'\\)"))
       (let* (( color-list (es-color-hex-to-list (match-string 1)))
              ( overlay (make-overlay (match-beginning 1) (match-end 1)))
              ( initial-buffer (current-buffer)))
@@ -115,5 +115,7 @@
                   'es--color-change-stamp
                   initial-buffer
                   overlay))))))
+
+(defalias 'es-edit-color-stamp 'es-color-edit-stamp)
 
 (provide 'es-edit-color-stamp)
