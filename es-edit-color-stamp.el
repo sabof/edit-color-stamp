@@ -1,4 +1,4 @@
-;;; es-edit-color-stamp.el --- Edit a hex color stamp, using a QT, or the internal color picker  -*- lexical-binding: t -*-
+;;; es-edit-color-stamp.el --- Edit a hex color stamp, using a QT or the internal color picker  -*- lexical-binding: t -*-
 ;;; Version: 0.1
 ;;; Author: sabof
 ;;; URL: https://github.com/sabof/es-edit-color-stamp
