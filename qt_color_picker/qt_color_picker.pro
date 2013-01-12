@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-TARGET = color_picker
+TARGET = qt_color_picker
 TEMPLATE = app
 
 
@@ -15,4 +15,3 @@ SOURCES += main.cpp
 HEADERS  +=
 
 CONFIG += console
-

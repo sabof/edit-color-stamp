@@ -1,34 +1,48 @@
-;;;  -*- lexical-binding: t -*-
+;;; es-edit-color-stamp.el --- Edit a hex color stamp, using a QT, or the internal color picker  -*- lexical-binding: t -*-
+;;; Version: 0.1
+;;; Author: sabof
+;;; URL: https://github.com/sabof/es-edit-color-stamp
+;;; Package-Requires: ((es-lib "0.1"))
+
+;;; Commentary:
+
+;; The project is hosted at https://github.com/sabof/es-edit-color-stamp
+;; The latest version, and all the relevant information can be found there.
+
+;;; License:
+
+;; This file is NOT part of GNU Emacs.
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation; either version 2, or (at
+;; your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program ; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Code:
+
 (require 'es-lib)
 
-(defvar es-color-picker-exec "color_picker")
-(defvar es-get-color-function 'es-color-launch-qt-picker)
-(defvar es-get-color-function 'es-color-launch-internal-picker)
-;; Relevant: widget-color--choose-action
+(defface es-color-stamp-highlight
+    '((t (:background "#888888" :foreground "#dddddd"
+          :box (:line-width 1 :color "#dddddd"))))
+  "Face used to highighlight color stamps while editing them.")
 
-(defun es-color-list-to-hex (color-list)
-  (apply 'format "#%02X%02X%02X" color-list))
-
-(defun es-color-normalize-hex (hex-string)
-  (if (string-match-p "^#" hex-string)
-      (upcase
-       (if (= (length hex-string) 4)
-           (apply 'concat "#"
-                  (mapcar
-                   (lambda (pair)
-                     (make-string
-                      2 (string-to-char
-                         (substring
-                          hex-string (car pair) (cdr pair)))))
-                   '((1 . 2) (2 . 3) (3 . 4))))
-           hex-string))
-      hex-string))
-
-(defun es-color-hex-to-list (hex-color)
-  (let ((hex-color (es-color-normalize-hex hex-color)))
-    (list (string-to-int (substring hex-color 1 3) 16)
-          (string-to-int (substring hex-color 3 5) 16)
-          (string-to-int (substring hex-color 5 7) 16))))
+(defvar es-color-qt-picker-exec "qt_color_picker")
+(defvar es-color-picker-function
+  (lambda (&rest args)
+    (if (executable-find es-color-qt-picker-exec)
+        (apply 'es-color-launch-qt-picker args)
+        (apply 'es-color-launch-internal-picker args))))
 
 (defun es-color-emacs-color-to-hex (color)
   (let ((color-values (color-values color)))
@@ -36,7 +50,7 @@
            (mapcar (lambda (c) (lsh c -8))
                    color-values))))
 
-(defun es-color--change-stamp (buffer overlay color)
+(defun es--color-change-stamp (buffer overlay color)
   (when (buffer-live-p buffer)
     (save-excursion
       (with-current-buffer buffer
@@ -50,9 +64,9 @@
   (let* (( process
            (apply
             'start-process
-            es-color-picker-exec
+            es-color-qt-picker-exec
             "*Messages*"
-            es-color-picker-exec
+            es-color-qt-picker-exec
             (mapcar 'int-to-string color-list)))
          ( process-output ""))
     (set-process-filter
@@ -93,14 +107,13 @@
       (let* (( color-list (es-color-hex-to-list (match-string 1)))
              ( overlay (make-overlay (match-beginning 1) (match-end 1)))
              ( initial-buffer (current-buffer)))
-        (overlay-put overlay 'face '(:background "#888888" :foreground "#dddddd"
-                                     :box (:line-width 1 :color "#dddddd")))
+        (overlay-put overlay 'face 'es-color-stamp-highlight)
         (overlay-put overlay 'priority 100)
-        (funcall es-get-color-function
+        (funcall es-color-picker-function
                  color-list
                  (apply-partially
-                  'es-color--change-stamp
+                  'es--color-change-stamp
                   initial-buffer
                   overlay))))))
 
-(provide 'es-color)
+(provide 'es-edit-color-stamp)
