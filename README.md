@@ -1,5 +1,6 @@
 # es-edit-color-stamp
-Edit hex color stamps using a QT, or the internal color picker.
+_Edit hex color stamps using a QT, or the internal color picker._
+
 ![screenshot](https://github.com/sabof/es-edit-color-stamp/raw/master/screenshot.png)
 
 #### To use the color QT picker:
