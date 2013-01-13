@@ -4,7 +4,7 @@ _Edit hex color stamps using a QT, or the internal color picker._
 ![screenshot](https://github.com/sabof/es-edit-color-stamp/raw/master/screenshot.png)
 
 #### Rainbow mode integration
-This mode can edit any color representation rainbow mode can recognize. A limitation being that it will always write in #FFFFFF format.
+This mode can edit any color representation rainbow-mode can recognize. A limitation being that it will always write in #FFFFFF format.
 
 #### To use the QT color picker:
 
