@@ -59,13 +59,6 @@
   "The function must returns a list like this ((R G B) beginning end). The RGB
 values should be from the 0-255 range.")
 
-;; Should be moved to es-lib
-(defun es-color-emacs-color-to-hex (color)
-  (let ((color-values (color-values color)))
-    (apply 'format "#%02x%02x%02x"
-           (mapcar (lambda (c) (lsh c -8))
-                   color-values))))
-
 (defun es--color-change-stamp (buffer overlay color)
   (when (buffer-live-p buffer)
     (save-excursion
