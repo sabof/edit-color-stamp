@@ -64,9 +64,10 @@ values should be from the 0-255 range.")
     (save-excursion
       (with-current-buffer buffer
         (save-excursion
-          (goto-char (overlay-start overlay))
-          (delete-region (overlay-start overlay) (overlay-end overlay))
-          (insert (es-color-list-to-hex color))
+          (when color
+            (goto-char (overlay-start overlay))
+            (delete-region (overlay-start overlay) (overlay-end overlay))
+            (insert (es-color-list-to-hex color)))
           (delete-overlay overlay))))))
 
 (defun* es-color-launch-qt-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
@@ -84,16 +85,17 @@ values should be from the 0-255 range.")
                      (concat process-output output))))
     (set-process-sentinel
      process (lambda (process change)
-               (when (string-match
-                      "NEW_COLOR \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\)"
-                      process-output)
-                 (funcall
-                  callback
-                  (mapcar (lambda (num)
-                            (string-to-int
-                             (match-string-no-properties
-                              num process-output)))
-                          (list 1 2 3))))))))
+               (funcall
+                callback
+                (if (string-match
+                     "NEW_COLOR \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\)"
+                     process-output)
+                    (mapcar (lambda (num)
+                              (string-to-int
+                               (match-string-no-properties
+                                num process-output)))
+                            (list 1 2 3))
+                    nil))))))
 
 (defun* es-color-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
   (list-colors-display
