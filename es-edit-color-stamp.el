@@ -160,3 +160,4 @@ Will replace it with a color stamp, disregarding any possible alpha value."
 (defalias 'es-color-edit-stamp 'es-edit-color-stamp)
 
 (provide 'es-edit-color-stamp)
+;;; es-edit-color-stamp.el ends here
