@@ -1,12 +1,12 @@
-;;; es-edit-color-stamp.el --- Edit a hex color stamp, using a QT or the internal color picker  -*- lexical-binding: t -*-
+;;; edit-color-stamp.el --- Edit a hex color stamp, using a QT or the internal color picker  -*- lexical-binding: t -*-
 ;;; Version: 0.1
 ;;; Author: sabof
-;;; URL: https://github.com/sabof/es-edit-color-stamp
+;;; URL: https://github.com/sabof/edit-color-stamp
 ;;; Package-Requires: ((es-lib "0.2"))
 
 ;;; Commentary:
 
-;; The project is hosted at https://github.com/sabof/es-edit-color-stamp
+;; The project is hosted at https://github.com/sabof/edit-color-stamp
 ;; The latest version, and all the relevant information can be found there.
 ;;
 ;; You should find a qt_color_picker folder in the same directory as this file.
@@ -15,7 +15,7 @@
 ;; $ qmake qt_color_picker.pro; make
 
 ;; then move the qt_color_picker executable somewhere in your path, or point the
-;; es-color-qt-picker-exec variable to it's location.
+;; ecs-qt-picker-exec variable to it's location.
 
 ;;; License:
 
@@ -40,26 +40,26 @@
 
 (require 'es-lib)
 
-(defface es-color-stamp-highlight
+(defface ecs-stamp-highlight
     '((t (:background "#888888" :foreground "#dddddd"
           :box (:line-width 1 :color "#dddddd"))))
   "Face used to highighlight color stamps while editing them.")
 
-(defvar es-color-qt-picker-exec "qt_color_picker")
-(defvar es-color-picker-function
+(defvar ecs-qt-picker-exec "qt_color_picker")
+(defvar ecs-picker-function
   #'(lambda (&rest args)
-    (if (executable-find es-color-qt-picker-exec)
-        (apply 'es-color-launch-qt-picker args)
-        (apply 'es-color-launch-internal-picker args))))
-(defvar es-color-at-point-function
+    (if (executable-find ecs-qt-picker-exec)
+        (apply 'ecs-launch-qt-picker args)
+        (apply 'ec-launch-internal-picker args))))
+(defvar ecs-at-point-function
   #'(lambda (&rest args)
-      (or (es-color-color-at-point-hex)
+      (or (ecs-color-at-point-hex)
           (and (bound-and-true-p rainbow-mode)
-               (es-color-color-at-point-rainbow))))
+               (ecs-color-at-point-rainbow))))
   "The function must returns a list like this ((R G B) beginning end). The RGB
 values should be from the 0-255 range.")
 
-(defun es--color-change-stamp (buffer overlay color)
+(defun ecs--change-stamp (buffer overlay color)
   (when (buffer-live-p buffer)
     (save-excursion
       (with-current-buffer buffer
@@ -70,13 +70,13 @@ values should be from the 0-255 range.")
             (insert (es-color-list-to-hex color)))
           (delete-overlay overlay))))))
 
-(defun* es-color-launch-qt-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+(defun* ecs-launch-qt-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
   (let* (( process
            (apply
             'start-process
-            es-color-qt-picker-exec
+            ecs-qt-picker-exec
             "*Messages*"
-            es-color-qt-picker-exec
+            ecs-qt-picker-exec
             (mapcar 'int-to-string color-list)))
          ( process-output ""))
     (set-process-filter
@@ -97,18 +97,18 @@ values should be from the 0-255 range.")
                             (list 1 2 3))
                     nil))))))
 
-(defun* es-color-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+(defun* ec-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
   (list-colors-display
    nil nil
    `(lambda (color)
       (quit-window t)
       (funcall
        (function ,callback)
-       (es-color-hex-to-list
-        (es-color-emacs-color-to-hex
+       (ecs-hex-to-list
+        (ecs-emacs-color-to-hex
          color))))))
 
-(defun es-color-color-at-point-hex ()
+(defun ecs-color-at-point-hex ()
   (save-excursion
     (and (or (eq (char-after) ?\# )
              (search-backward "#" (- (point) 6) t))
@@ -117,15 +117,15 @@ values should be from the 0-255 range.")
          (list (es-color-hex-to-list (match-string 1))
                (match-beginning 1) (match-end 1)))))
 
-(defun* es-color-color-at-point-rainbow ()
+(defun* ecs-color-at-point-rainbow ()
   "Will pick up any face that has set it's background explicitly.
 Will replace it with a color stamp, disregarding any possible alpha value."
   (save-excursion
     (let* ((face (or (getf (text-properties-at (point)) 'face)
-                     (return-from es-color-color-at-point-rainbow)))
+                     (return-from ecs-color-at-point-rainbow)))
            (bg (or (and (consp face)
                         (second (assoc :background face)))
-                   (return-from es-color-color-at-point-rainbow)))
+                   (return-from ecs-color-at-point-rainbow)))
            beginning end)
       (while (eq (getf (text-properties-at (point)) 'face)
                  face)
@@ -137,27 +137,25 @@ Will replace it with a color stamp, disregarding any possible alpha value."
         (forward-char 1))
       ;; (forward-char -1)
       (setq end (point))
-      (list (es-color-hex-to-list (es-color-emacs-color-to-hex bg))
+      (list (ecs-hex-to-list (ecs-emacs-color-to-hex bg))
             beginning end))))
 
 ;;;###autoload
-(defun* es-edit-color-stamp ()
+(defun* edit-color-stamp ()
   (interactive)
-  (multiple-value-bind (color-list beginning end) (funcall es-color-at-point-function)
+  (multiple-value-bind (color-list beginning end) (funcall ecs-at-point-function)
     (unless color-list
-      (return-from es-edit-color-stamp))
+      (return-from edit-color-stamp))
     (let* (( overlay (make-overlay beginning end))
            ( initial-buffer (current-buffer)))
-      (overlay-put overlay 'face 'es-color-stamp-highlight)
+      (overlay-put overlay 'face 'ecs-stamp-highlight)
       (overlay-put overlay 'priority 100)
-      (funcall es-color-picker-function
+      (funcall ecs-picker-function
                color-list
                (apply-partially
-                'es--color-change-stamp
+                'ecs--change-stamp
                 initial-buffer
                 overlay)))))
 
-(defalias 'es-color-edit-stamp 'es-edit-color-stamp)
-
-(provide 'es-edit-color-stamp)
-;;; es-edit-color-stamp.el ends here
+(provide 'edit-color-stamp)
+;;; edit-color-stamp.el ends here

@@ -1,4 +1,4 @@
-# es-edit-color-stamp
+# edit-color-stamp
 _Edit hex color stamps using a QT, or the internal color picker._
 
 ![screenshot](https://github.com/sabof/es-edit-color-stamp/raw/master/screenshot.png)
