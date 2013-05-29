@@ -2,7 +2,7 @@
 ;;; Version: 0.1
 ;;; Author: sabof
 ;;; URL: https://github.com/sabof/edit-color-stamp
-;;; Package-Requires: ((es-lib "0.2"))
+;;; Package-Requires: ((es-lib "0.2") (cl-lib "1.0"))
 
 ;;; Commentary:
 
@@ -38,6 +38,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'es-lib)
 
 (defface ecs-stamp-highlight
@@ -46,11 +47,13 @@
   "Face used to highighlight color stamps while editing them.")
 
 (defvar ecs-qt-picker-exec "qt_color_picker")
+
 (defvar ecs-picker-function
   #'(lambda (&rest args)
-    (if (executable-find ecs-qt-picker-exec)
-        (apply 'ecs-launch-qt-picker args)
-        (apply 'ec-launch-internal-picker args))))
+      (if (executable-find ecs-qt-picker-exec)
+          (apply 'ecs-launch-qt-picker args)
+          (apply 'ec-launch-internal-picker args))))
+
 (defvar ecs-at-point-function
   #'(lambda (&rest args)
       (or (ecs-color-at-point-hex)
@@ -70,7 +73,9 @@ values should be from the 0-255 range.")
             (insert (es-color-list-to-hex color)))
           (delete-overlay overlay))))))
 
-(defun* ecs-launch-qt-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+(cl-defun ecs-launch-qt-picker
+    (&optional (color-list (list 0 0 0))
+               (callback 'ignore))
   (let* (( process
            (apply
             'start-process
@@ -91,13 +96,15 @@ values should be from the 0-255 range.")
                      "NEW_COLOR \\([^ ]+\\) \\([^ ]+\\) \\([^ ]+\\)"
                      process-output)
                     (mapcar (lambda (num)
-                              (string-to-int
+                              (string-to-number
                                (match-string-no-properties
                                 num process-output)))
                             (list 1 2 3))
                     nil))))))
 
-(defun* ec-launch-internal-picker (&optional (color-list (list 0 0 0)) (callback 'ignore))
+(cl-defun ec-launch-internal-picker
+    (&optional (color-list (list 0 0 0))
+               (callback 'ignore))
   (list-colors-display
    nil nil
    `(lambda (color)
@@ -117,22 +124,22 @@ values should be from the 0-255 range.")
          (list (es-color-hex-to-list (match-string 1))
                (match-beginning 1) (match-end 1)))))
 
-(defun* ecs-color-at-point-rainbow ()
+(cl-defun ecs-color-at-point-rainbow ()
   "Will pick up any face that has set it's background explicitly.
 Will replace it with a color stamp, disregarding any possible alpha value."
   (save-excursion
-    (let* ((face (or (getf (text-properties-at (point)) 'face)
-                     (return-from ecs-color-at-point-rainbow)))
+    (let* ((face (or (cl-getf (text-properties-at (point)) 'face)
+                     (cl-return-from ecs-color-at-point-rainbow)))
            (bg (or (and (consp face)
                         (second (assoc :background face)))
-                   (return-from ecs-color-at-point-rainbow)))
+                   (cl-return-from ecs-color-at-point-rainbow)))
            beginning end)
-      (while (eq (getf (text-properties-at (point)) 'face)
+      (while (eq (cl-getf (text-properties-at (point)) 'face)
                  face)
         (forward-char -1))
       (forward-char 1)
       (setq beginning (point))
-      (while (eq (getf (text-properties-at (point)) 'face)
+      (while (eq (cl-getf (text-properties-at (point)) 'face)
                  face)
         (forward-char 1))
       ;; (forward-char -1)
@@ -142,11 +149,13 @@ Will replace it with a color stamp, disregarding any possible alpha value."
             beginning end))))
 
 ;;;###autoload
-(defun* edit-color-stamp ()
+(cl-defun edit-color-stamp ()
   (interactive)
-  (multiple-value-bind (color-list beginning end) (funcall ecs-at-point-function)
+  (cl-multiple-value-bind
+      (color-list beginning end)
+      (funcall ecs-at-point-function)
     (unless color-list
-      (return-from edit-color-stamp))
+      (cl-return-from edit-color-stamp))
     (let* (( overlay (make-overlay beginning end))
            ( initial-buffer (current-buffer)))
       (overlay-put overlay 'face 'ecs-stamp-highlight)
