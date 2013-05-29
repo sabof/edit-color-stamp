@@ -104,8 +104,8 @@ values should be from the 0-255 range.")
       (quit-window t)
       (funcall
        (function ,callback)
-       (ecs-hex-to-list
-        (ecs-emacs-color-to-hex
+       (es-color-hex-to-list
+        (es-color-emacs-color-to-hex
          color))))))
 
 (defun ecs-color-at-point-hex ()
@@ -137,7 +137,8 @@ Will replace it with a color stamp, disregarding any possible alpha value."
         (forward-char 1))
       ;; (forward-char -1)
       (setq end (point))
-      (list (ecs-hex-to-list (ecs-emacs-color-to-hex bg))
+      (list (es-color-hex-to-list
+             (es-color-emacs-color-to-hex bg))
             beginning end))))
 
 ;;;###autoload
