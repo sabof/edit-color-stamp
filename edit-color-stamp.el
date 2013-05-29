@@ -59,8 +59,8 @@
       (or (ecs-color-at-point-hex)
           (and (bound-and-true-p rainbow-mode)
                (ecs-color-at-point-rainbow))))
-  "The function must returns a list like this ((R G B) beginning end). The RGB
-values should be from the 0-255 range.")
+  "The function must returns a list like this ((R G B) beginning end).
+The RGB values should be from the 0-255 range.")
 
 (defun ecs--change-stamp (buffer overlay color)
   (when (buffer-live-p buffer)
