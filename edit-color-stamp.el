@@ -131,7 +131,7 @@ Will replace it with a color stamp, disregarding any possible alpha value."
     (let* ((face (or (cl-getf (text-properties-at (point)) 'face)
                      (cl-return-from ecs-color-at-point-rainbow)))
            (bg (or (and (consp face)
-                        (second (assoc :background face)))
+                        (cl-second (assoc :background face)))
                    (cl-return-from ecs-color-at-point-rainbow)))
            beginning end)
       (while (eq (cl-getf (text-properties-at (point)) 'face)
